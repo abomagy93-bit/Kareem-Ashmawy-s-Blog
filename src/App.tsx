@@ -5,6 +5,7 @@ import { PostCard } from './components/PostCard';
 import { PostDetail } from './components/PostDetail';
 import { Footer } from './components/Footer';
 import { BlogPost, ReadingSettings, LanguageFilter } from './types';
+import { fetchPostsFromAnySource } from './utils/postsFetcher';
 import { Loader2, AlertCircle, Bookmark, ArrowUpDown } from 'lucide-react';
 
 export default function App() {
@@ -65,7 +66,7 @@ export default function App() {
   const [lastSyncedTime, setLastSyncedTime] = useState<Date>(new Date());
   const [autoSyncStatus, setAutoSyncStatus] = useState<'idle' | 'syncing' | 'synced'>('idle');
 
-  // Fetch all posts from backend endpoint with auto-sync capability
+  // Fetch all posts with multi-tier fallback (Express server API -> Direct Blogger API -> RSS Proxy -> Static Fallback)
   const fetchPosts = async (showRefreshSpinner = false, isSilent = false) => {
     if (showRefreshSpinner) setIsRefreshing(true);
     else if (!isSilent && posts.length === 0) setLoading(true);
@@ -73,15 +74,14 @@ export default function App() {
     if (isSilent) setAutoSyncStatus('syncing');
 
     try {
-      const res = await fetch(showRefreshSpinner ? '/api/posts?refresh=true' : '/api/posts');
-      const data = await res.json();
-      if (data?.posts) {
+      const fetchedPosts = await fetchPostsFromAnySource(showRefreshSpinner);
+      if (fetchedPosts && fetchedPosts.length > 0) {
         setPosts((prevPosts) => {
-          if (prevPosts.length > 0 && data.posts.length > prevPosts.length) {
-            const diff = data.posts.length - prevPosts.length;
+          if (prevPosts.length > 0 && fetchedPosts.length > prevPosts.length) {
+            const diff = fetchedPosts.length - prevPosts.length;
             showToast(`مزامنة تلقائية: تم استلام ${diff} مقال/بحث جديد ✨`);
           }
-          return data.posts;
+          return fetchedPosts;
         });
         setLastSyncedTime(new Date());
         setAutoSyncStatus('synced');
