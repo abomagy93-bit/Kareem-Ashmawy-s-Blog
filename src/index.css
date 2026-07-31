@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .font-cairo {
+    font-family: 'Cairo', system-ui, sans-serif;
+  }
+  .font-tajawal {
+    font-family: 'Tajawal', system-ui, sans-serif;
+  }
+  .font-amiri {
+    font-family: 'Amiri', serif;
+  }
+  .font-playfair {
+    font-family: 'Playfair Display', serif;
+  }
+
+  /* Luxury Gold Gradient Text */
+  .text-gold-gradient {
+    background: linear-gradient(135deg, #FDF0A6 0%, #D4AF37 50%, #AA771C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .bg-gold-gradient {
+    background: linear-gradient(135deg, #FDE68A 0%, #D4AF37 50%, #92400E 100%);
+  }
+
+  .bg-gold-gradient-soft {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(146, 64, 14, 0.08) 100%);
+  }
+
+  .border-gold {
+    border-color: rgba(212, 175, 55, 0.35);
+  }
+
+  .shadow-gold {
+    box-shadow: 0 4px 20px -2px rgba(212, 175, 55, 0.2);
+  }
+}
+
+/* Custom Gold Dark Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #05070c;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.6);
+}
+
+/* Blog Article Content Typography in Luxury Night Mode */
+.article-prose {
+  font-size: 1.125rem;
+  line-height: 1.9;
+}
+
+.article-prose p {
+  margin-bottom: 1.5rem;
+}
+
+.article-prose h1, .article-prose h2, .article-prose h3, .article-prose h4 {
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #FDE68A;
+}
+
+.article-prose h2 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  padding-bottom: 0.5rem;
+}
+
+.article-prose h3 {
+  font-size: 1.25rem;
+}
+
+.article-prose ul, .article-prose ol {
+  margin-bottom: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.article-prose ul {
+  list-style-type: disc;
+}
+
+.article-prose ol {
+  list-style-type: decimal;
+}
+
+.article-prose li {
+  margin-bottom: 0.5rem;
+}
+
+.article-prose img {
+  border-radius: 1rem;
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem auto;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+.article-prose blockquote {
+  border-right: 4px solid #D4AF37;
+  padding-right: 1.25rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  background: rgba(212, 175, 55, 0.05);
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.article-prose a {
+  color: #FBBF24;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.article-prose code {
+  background-color: rgba(212, 175, 55, 0.15);
+  color: #FDE68A;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+  font-family: monospace;
+}
+
+.article-prose pre {
+  background-color: #030407;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  color: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  direction: ltr;
+  text-align: left;
+  margin: 1.5rem 0;
+}

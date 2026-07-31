@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Sitemap: https://karimashmawy.blogspot.com/sitemap.xml
+Sitemap: https://kareem-ashmawy.netlify.app/sitemap.xml

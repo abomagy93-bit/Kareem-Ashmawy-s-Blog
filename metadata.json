@@ -1,0 +1,6 @@
+{
+  "name": "مدونة المفكر والباحث كريم عشماوي",
+  "description": "المنصة الرسمية المتقدمة لمدونة المفكر والباحث كريم عشماوي - قراءة كافة المقالات والتدوينات باللغتين العربية والإنجليزية مع إمكانات SEO المتطورة",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
