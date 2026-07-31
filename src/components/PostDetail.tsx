@@ -123,21 +123,22 @@ export const PostDetail: React.FC<PostDetailProps> = ({
     localStorage.setItem(`post_reactions_${post.id}`, JSON.stringify(updated));
   };
 
-  // Share / Copy Link
+  // Share / Copy Link for dedicated post URL
   const handleShare = async () => {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?post=${encodeURIComponent(post.id)}`;
     if (navigator.share) {
       try {
         await navigator.share({
           title: post.title,
           text: post.snippet,
-          url: post.link,
+          url: shareUrl,
         });
         return;
       } catch (e) {
         // Fallback
       }
     }
-    navigator.clipboard.writeText(post.link);
+    navigator.clipboard.writeText(shareUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
   };

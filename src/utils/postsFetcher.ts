@@ -1,4 +1,5 @@
 import { BlogPost } from '../types';
+import { STATIC_POSTS_CACHE } from '../data/postsCache';
 
 function decodeHtmlEntities(str: string): string {
   if (!str) return '';
@@ -102,72 +103,15 @@ const HIGH_RES_FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80"
 ];
 
-export const FALLBACK_POSTS: BlogPost[] = [
-  {
-    id: "post-1",
-    title: "مستقبل الذكاء الاصطناعي وتطبيقاته في حياتنا اليومية",
-    content: `<p>تشهد تقنيات الذكاء الاصطناعي تطوراً متسارعاً يغير من نمط عملنا وحياتنا. إن الذكاء الاصطناعي التوليدي لم يعد مجرد رفاهية تقنية، بل أصبح ركيزة أساسية في حل المشكلات المعقدة وتحسين الإنتاجية.</p>
-    <p>في هذا المقال، نستعرض كيف يمكن للأفراد والمؤسسات الاستفادة من النماذج الذكية للارتقاء بجودة العمل، وأبرز التحديات الأخلاقية والتقنية التي تواجه هذا التطور.</p>
-    <h3>أهم المحاور:</h3>
-    <ul>
-      <li>أثر الذكاء الاصطناعي على صناعة البرمجيات وتطوير التطبيقات.</li>
-      <li>كيفية بناء استراتيجية للاستفادة من الأدوات الذكية بشكل آمن.</li>
-      <li>مستقبل التعلم الآلي والشبكات العصبية في تحسين تجارب المستخدمين.</li>
-    </ul>`,
-    snippet: "استعراض شامل لأحدث تطورات الذكاء الاصطناعي وأثرها على حياتنا اليومية وصناعة البرمجيات وكيفية الاستفادة منها.",
-    publishedDate: new Date(Date.now() - 86400000 * 2).toISOString(),
-    author: "كريم عشماوي",
-    authorAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
-    link: "https://karimashmawy.blogspot.com",
-    categories: ["تكنولوجيا", "تطوير الذات"],
-    thumbnail: "https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&w=800&q=80",
-    readingTimeMinutes: 4,
-    language: 'ar'
-  },
-  {
-    id: "post-2",
-    title: "Best Practices for Building Scalable Web Applications",
-    content: `<p>Building modern web applications requires careful architectural planning, clean code practices, and efficient performance optimizations.</p>
-    <p>In this article, we explore essential guidelines for software design, state management, and long-term maintainability.</p>
-    <h3>Key Highlights:</h3>
-    <ul>
-      <li>Modular Component Architecture</li>
-      <li>State Optimization and Lazy Loading</li>
-      <li>API Gateway Proxying and Security</li>
-    </ul>`,
-    snippet: "Essential guidelines and software engineering best practices for building scalable, high-performance web applications.",
-    publishedDate: new Date(Date.now() - 86400000 * 4).toISOString(),
-    author: "كريم عشماوي",
-    authorAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
-    link: "https://karimashmawy.blogspot.com",
-    categories: ["Software", "Development"],
-    thumbnail: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80",
-    readingTimeMinutes: 5,
-    language: 'en'
-  },
-  {
-    id: "post-3",
-    title: "أفضل الممارسات لبناء تطبيقات برمجية مستدامة وسريعة",
-    content: `<p>بناء التطبيقات البرمجية لا يقتصر فقط على كتابة الشفرات البرمجية، بل يتعلق بكيفية تنظيم البنية التحتية وضمان قابليتها للتوسع والتحمل.</p>
-    <p>نناقش في هذه المقالة مبادئ هندسة البرمجيات النظيفة، وكيفية التعامل مع التحسين المستمر لأداء التطبيقات، والابتعاد عن تعقيدات البرمجة الزائدة.</p>`,
-    snippet: "مبادئ هندسة البرمجيات النظيفة وكيفية بناء تطبيقات سريعة ومستدامة قابلة للتوسع والصيانة.",
-    publishedDate: new Date(Date.now() - 86400000 * 6).toISOString(),
-    author: "كريم عشماوي",
-    authorAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
-    link: "https://karimashmawy.blogspot.com",
-    categories: ["برمجة", "هندسة البرمجيات"],
-    thumbnail: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=800&q=80",
-    readingTimeMinutes: 5,
-    language: 'ar'
-  }
-];
-
-function parseBloggerFeed(data: any): BlogPost[] {
+export function parseBloggerFeed(data: any): BlogPost[] {
   const entries = data?.feed?.entry || [];
   if (entries.length === 0) return [];
 
   return entries.map((entry: any, index: number) => {
-    const id = entry.id?.$t || `post-${index}`;
+    const rawId = entry.id?.$t || `post-${index}`;
+    const cleanId = rawId.includes('.post-') ? rawId.split('.post-')[1] : rawId.includes('post-') ? rawId.split('post-')[1] : rawId;
+    const id = cleanId || `post-${index}`;
+
     const title = entry.title?.$t || 'بدون عنوان';
     const content = entry.content?.$t || entry.summary?.$t || '';
     const snippet = stripHtml(content).slice(0, 180) + '...';
@@ -215,63 +159,8 @@ function parseBloggerFeed(data: any): BlogPost[] {
   });
 }
 
-function parseAtomXmlFeed(xmlString: string): BlogPost[] {
-  if (!xmlString) return [];
-  try {
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlString, "text/xml");
-    const entries = Array.from(xmlDoc.getElementsByTagName("entry"));
-
-    return entries.map((entry, index) => {
-      const id = entry.getElementsByTagName("id")[0]?.textContent || `post-${index}`;
-      const title = entry.getElementsByTagName("title")[0]?.textContent || 'بدون عنوان';
-      const content = entry.getElementsByTagName("content")[0]?.textContent || entry.getElementsByTagName("summary")[0]?.textContent || '';
-      const snippet = stripHtml(content).slice(0, 180) + '...';
-      const publishedDate = entry.getElementsByTagName("published")[0]?.textContent || new Date().toISOString();
-      const updatedDate = entry.getElementsByTagName("updated")[0]?.textContent || undefined;
-      
-      const authorElem = entry.getElementsByTagName("author")[0];
-      const author = authorElem?.getElementsByTagName("name")[0]?.textContent || 'كريم عشماوي';
-      
-      const links = Array.from(entry.getElementsByTagName("link"));
-      const altLink = links.find(l => l.getAttribute("rel") === "alternate")?.getAttribute("href") || 'https://karimashmawy.blogspot.com';
-      const categories = Array.from(entry.getElementsByTagName("category")).map(c => c.getAttribute("term")).filter(Boolean) as string[];
-
-      let rawThumb = entry.getElementsByTagName("media:thumbnail")[0]?.getAttribute("url") || entry.getElementsByTagNameNS("*", "thumbnail")[0]?.getAttribute("url");
-      if (rawThumb && (rawThumb.includes('blank.gif') || rawThumb.includes('b16-g') || rawThumb.includes('pixel'))) {
-        rawThumb = undefined;
-      }
-
-      let thumbnail = extractFirstImage(content);
-      if (!thumbnail && rawThumb) {
-        thumbnail = upgradeImageQuality(rawThumb);
-      }
-      if (!thumbnail) {
-        thumbnail = HIGH_RES_FALLBACK_IMAGES[index % HIGH_RES_FALLBACK_IMAGES.length];
-      }
-
-      const language = detectLanguage(title, content, categories);
-
-      return {
-        id,
-        title,
-        content,
-        snippet,
-        publishedDate,
-        updatedDate,
-        author,
-        link: altLink,
-        categories: categories.length > 0 ? categories : [language === 'ar' ? 'مقالات' : 'Articles'],
-        thumbnail,
-        readingTimeMinutes: calculateReadingTime(content),
-        language
-      };
-    });
-  } catch (e) {
-    console.error('Error parsing Atom XML feed:', e);
-    return [];
-  }
-}
+// Default REAL articles fallback extracted from blogger feed
+export const REAL_FALLBACK_POSTS: BlogPost[] = parseBloggerFeed(STATIC_POSTS_CACHE);
 
 export function formatBloggerPostContent(html: string): string {
   if (!html) return '';
@@ -289,54 +178,45 @@ export function formatBloggerPostContent(html: string): string {
   return content;
 }
 
-async function fetchAllBloggerJsonPosts(): Promise<BlogPost[]> {
-  const allPosts: BlogPost[] = [];
-  let startIndex = 1;
-  const maxResults = 150;
-  let hasMore = true;
-  let attempts = 0;
+// JSONP fetcher for browser environment to bypass CORS completely on Netlify
+function fetchBloggerJsonp(startIndex = 1, maxResults = 150): Promise<any> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') {
+      return reject(new Error('Window undefined'));
+    }
 
-  while (hasMore && attempts < 10) {
-    attempts++;
-    const feedUrl = `https://karimashmawy.blogspot.com/feeds/posts/default?alt=json&max-results=${maxResults}&start-index=${startIndex}`;
+    const callbackName = 'blogger_cb_' + Math.random().toString(36).substring(2, 9);
+    const script = document.createElement('script');
     
-    let res: Response | null = null;
-    try {
-      res = await fetch(feedUrl);
-      if (!res.ok) throw new Error(`Status ${res.status}`);
-    } catch {
-      // Try proxy if direct request failed
-      try {
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`;
-        res = await fetch(proxyUrl);
-      } catch (err) {
-        console.warn('Proxy fetch failed for start-index', startIndex, err);
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error('JSONP timeout'));
+    }, 10000);
+
+    function cleanup() {
+      clearTimeout(timeout);
+      delete (window as any)[callbackName];
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
       }
     }
 
-    if (!res || !res.ok) {
-      break;
-    }
+    (window as any)[callbackName] = (data: any) => {
+      cleanup();
+      resolve(data);
+    };
 
-    const data = await res.json();
-    const batch = parseBloggerFeed(data);
-    if (batch.length === 0) {
-      hasMore = false;
-    } else {
-      allPosts.push(...batch);
-      const totalResults = parseInt(data?.feed?.openSearch$totalResults?.$t || '0', 10);
-      if (allPosts.length >= totalResults || batch.length < maxResults) {
-        hasMore = false;
-      } else {
-        startIndex += maxResults;
-      }
-    }
-  }
+    script.src = `https://karimashmawy.blogspot.com/feeds/posts/default?alt=json-in-script&callback=${callbackName}&max-results=${maxResults}&start-index=${startIndex}`;
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('JSONP script error'));
+    };
 
-  return allPosts;
+    document.head.appendChild(script);
+  });
 }
 
-async function fetchAllBloggerXmlPosts(): Promise<BlogPost[]> {
+async function fetchAllBloggerJsonpPosts(): Promise<BlogPost[]> {
   const allPosts: BlogPost[] = [];
   let startIndex = 1;
   const maxResults = 150;
@@ -345,36 +225,23 @@ async function fetchAllBloggerXmlPosts(): Promise<BlogPost[]> {
 
   while (hasMore && attempts < 10) {
     attempts++;
-    const feedUrl = `https://karimashmawy.blogspot.com/feeds/posts/default?max-results=${maxResults}&start-index=${startIndex}`;
-    
-    let res: Response | null = null;
     try {
-      res = await fetch(feedUrl);
-      if (!res.ok) throw new Error(`Status ${res.status}`);
-    } catch {
-      try {
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`;
-        res = await fetch(proxyUrl);
-      } catch (err) {
-        console.warn('XML Proxy fetch failed for start-index', startIndex, err);
-      }
-    }
-
-    if (!res || !res.ok) {
-      break;
-    }
-
-    const xmlText = await res.text();
-    const batch = parseAtomXmlFeed(xmlText);
-    if (batch.length === 0) {
-      hasMore = false;
-    } else {
-      allPosts.push(...batch);
-      if (batch.length < maxResults) {
+      const data = await fetchBloggerJsonp(startIndex, maxResults);
+      const batch = parseBloggerFeed(data);
+      if (batch.length === 0) {
         hasMore = false;
       } else {
-        startIndex += maxResults;
+        allPosts.push(...batch);
+        const totalResults = parseInt(data?.feed?.openSearch$totalResults?.$t || '0', 10);
+        if (allPosts.length >= totalResults || batch.length < maxResults) {
+          hasMore = false;
+        } else {
+          startIndex += maxResults;
+        }
       }
+    } catch (e) {
+      console.warn('JSONP batch failed:', e);
+      hasMore = false;
     }
   }
 
@@ -382,7 +249,7 @@ async function fetchAllBloggerXmlPosts(): Promise<BlogPost[]> {
 }
 
 export async function fetchPostsFromAnySource(showRefreshSpinner = false): Promise<BlogPost[]> {
-  // 1. Try local Express API route first
+  // 1. Try local Express API route (Cloud Run / Node dev server)
   try {
     const url = showRefreshSpinner ? '/api/posts?refresh=true' : '/api/posts';
     const res = await fetch(url);
@@ -396,29 +263,35 @@ export async function fetchPostsFromAnySource(showRefreshSpinner = false): Promi
       }
     }
   } catch (err) {
-    console.warn('Backend /api/posts route unavailable, switching to direct client fetch.', err);
+    console.warn('/api/posts unavailable, trying JSONP client fetch.', err);
   }
 
-  // 2. Client-side paginated fetch from Blogger JSON API (gets ALL posts on Netlify)
+  // 2. Try JSONP directly in browser (100% reliable on Netlify, bypasses CORS)
+  if (typeof window !== 'undefined') {
+    try {
+      const jsonpPosts = await fetchAllBloggerJsonpPosts();
+      if (jsonpPosts.length > 0) {
+        return jsonpPosts;
+      }
+    } catch (err) {
+      console.warn('Blogger JSONP fetch failed:', err);
+    }
+  }
+
+  // 3. Try fetching static public/posts-cache.json asset from host
   try {
-    const jsonPosts = await fetchAllBloggerJsonPosts();
-    if (jsonPosts.length > 0) {
-      return jsonPosts;
+    const cacheRes = await fetch('/posts-cache.json');
+    if (cacheRes.ok) {
+      const cacheData = await cacheRes.json();
+      const parsed = parseBloggerFeed(cacheData);
+      if (parsed.length > 0) {
+        return parsed;
+      }
     }
   } catch (err) {
-    console.warn('Direct Blogger JSON fetch failed, trying XML feed parsing.', err);
+    console.warn('Static posts-cache.json fetch failed:', err);
   }
 
-  // 3. Fallback to client-side paginated fetch from Blogger Atom XML feed
-  try {
-    const xmlPosts = await fetchAllBloggerXmlPosts();
-    if (xmlPosts.length > 0) {
-      return xmlPosts;
-    }
-  } catch (err) {
-    console.warn('Blogger XML feed parsing failed.', err);
-  }
-
-  // 4. Return robust static fallback posts if all network requests fail
-  return FALLBACK_POSTS;
+  // 4. Fallback to pre-bundled real posts of Karim Ashmawy
+  return REAL_FALLBACK_POSTS;
 }

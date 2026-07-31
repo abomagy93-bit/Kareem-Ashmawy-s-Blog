@@ -40,6 +40,48 @@ export default function App() {
   // Selected post for detail reader view
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
 
+  // Helper to extract post ID from URL
+  const getPostIdFromUrl = (): string | null => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const searchPost = params.get('post') || params.get('id');
+      if (searchPost) return searchPost;
+
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      if (hash.startsWith('post-')) return hash.replace('post-', '');
+      if (hash.startsWith('post/')) return hash.replace('post/', '');
+      if (hash) return hash;
+
+      const pathMatch = window.location.pathname.match(/\/post\/([^/]+)/);
+      if (pathMatch && pathMatch[1]) return pathMatch[1];
+    } catch {
+      return null;
+    }
+    return null;
+  };
+
+  // Select post and update URL page route
+  const handleSelectPost = (post: BlogPost) => {
+    setSelectedPost(post);
+    try {
+      const newUrl = `${window.location.pathname}?post=${encodeURIComponent(post.id)}`;
+      window.history.pushState({ postId: post.id }, '', newUrl);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Close post and restore base URL
+  const handleClosePost = () => {
+    setSelectedPost(null);
+    try {
+      window.history.pushState(null, '', window.location.pathname);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // Toast Notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -133,22 +175,49 @@ export default function App() {
     });
   };
 
-  // Share post handler
+  // Share post handler with dedicated article URL link
   const handleSharePost = (post: BlogPost, e: React.MouseEvent) => {
     e.stopPropagation();
+    const shareUrl = `${window.location.origin}${window.location.pathname}?post=${encodeURIComponent(post.id)}`;
     if (navigator.share) {
       navigator
         .share({
           title: post.title,
           text: post.snippet,
-          url: post.link,
+          url: shareUrl,
         })
         .catch(() => {});
     } else {
-      navigator.clipboard.writeText(post.link);
-      showToast('تم نسخ رابط المقال إلى الحافظة');
+      navigator.clipboard.writeText(shareUrl);
+      showToast('تم نسخ رابط المقال المباشر إلى الحافظة');
     }
   };
+
+  // Sync URL route with selected article for dedicated page URLs
+  useEffect(() => {
+    if (posts.length === 0) return;
+
+    const syncUrlToPost = () => {
+      const targetId = getPostIdFromUrl();
+      if (targetId) {
+        const found = posts.find((p) => p.id === targetId || p.id.endsWith(targetId) || targetId.endsWith(p.id));
+        if (found) {
+          setSelectedPost(found);
+          return;
+        }
+      }
+    };
+
+    syncUrlToPost();
+
+    window.addEventListener('popstate', syncUrlToPost);
+    window.addEventListener('hashchange', syncUrlToPost);
+
+    return () => {
+      window.removeEventListener('popstate', syncUrlToPost);
+      window.removeEventListener('hashchange', syncUrlToPost);
+    };
+  }, [posts]);
 
   // Calculate counts for Arabic / English classification
   const arCount = useMemo(() => posts.filter((p) => p.language === 'ar').length, [posts]);
@@ -301,7 +370,7 @@ export default function App() {
               <PostCard
                 key={post.id}
                 post={post}
-                onSelect={setSelectedPost}
+                onSelect={handleSelectPost}
                 isSaved={savedPostIds.includes(post.id)}
                 onToggleSave={handleToggleSave}
                 onShare={handleSharePost}
@@ -315,7 +384,7 @@ export default function App() {
       {selectedPost && (
         <PostDetail
           post={selectedPost}
-          onClose={() => setSelectedPost(null)}
+          onClose={handleClosePost}
           isSaved={savedPostIds.includes(selectedPost.id)}
           onToggleSave={(id) => handleToggleSave(id)}
           settings={readingSettings}
