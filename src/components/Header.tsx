@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Search, Bookmark, ExternalLink, RefreshCw, Radio, Play, Pause, Globe, BookOpen, Sparkles } from 'lucide-react';
+import { Search, Bookmark, ExternalLink, RefreshCw, Radio, Play, Pause, Globe, BookOpen, Sparkles, Youtube } from 'lucide-react';
 import { ThemeMode, LanguageFilter } from '../types';
 
 interface HeaderProps {
@@ -163,6 +163,20 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <BookOpen className="w-3 h-3 text-amber-400" />
               <span>موقع القرآن الكريم</span>
+              <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+            </a>
+
+            <span className="text-amber-500/30">|</span>
+
+            {/* YouTube Lectures Playlist */}
+            <a
+              href="https://youtube.com/playlist?list=PLGUU_GZ29r2y0lhz9ZXxSUhl8DmCc6YL5&si=dAGv9kwPGM0RBonr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors hover:underline font-bold"
+            >
+              <Youtube className="w-3.5 h-3.5 text-red-500" />
+              <span>المحاضرات (YouTube)</span>
               <ExternalLink className="w-2.5 h-2.5 opacity-70" />
             </a>
 

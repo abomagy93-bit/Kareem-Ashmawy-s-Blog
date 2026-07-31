@@ -62,27 +62,59 @@ export default function App() {
     root.classList.add('dark');
   }, []);
 
-  // Fetch all posts from backend endpoint
-  const fetchPosts = async (showRefreshSpinner = false) => {
+  const [lastSyncedTime, setLastSyncedTime] = useState<Date>(new Date());
+  const [autoSyncStatus, setAutoSyncStatus] = useState<'idle' | 'syncing' | 'synced'>('idle');
+
+  // Fetch all posts from backend endpoint with auto-sync capability
+  const fetchPosts = async (showRefreshSpinner = false, isSilent = false) => {
     if (showRefreshSpinner) setIsRefreshing(true);
-    else setLoading(true);
+    else if (!isSilent && posts.length === 0) setLoading(true);
+
+    if (isSilent) setAutoSyncStatus('syncing');
 
     try {
-      const res = await fetch('/api/posts');
+      const res = await fetch(showRefreshSpinner ? '/api/posts?refresh=true' : '/api/posts');
       const data = await res.json();
       if (data?.posts) {
-        setPosts(data.posts);
+        setPosts((prevPosts) => {
+          if (prevPosts.length > 0 && data.posts.length > prevPosts.length) {
+            const diff = data.posts.length - prevPosts.length;
+            showToast(`مزامنة تلقائية: تم استلام ${diff} مقال/بحث جديد ✨`);
+          }
+          return data.posts;
+        });
+        setLastSyncedTime(new Date());
+        setAutoSyncStatus('synced');
+        setTimeout(() => setAutoSyncStatus('idle'), 3000);
       }
     } catch (err) {
       console.error('Failed to fetch posts:', err);
+      setAutoSyncStatus('idle');
     } finally {
       setLoading(false);
       setIsRefreshing(false);
     }
   };
 
+  // Initial fetch and real-time auto-sync setup (Interval & Window Focus)
   useEffect(() => {
     fetchPosts();
+
+    // Polling every 45 seconds for new articles
+    const interval = setInterval(() => {
+      fetchPosts(false, true);
+    }, 45000);
+
+    // Sync when user returns to tab
+    const handleFocus = () => {
+      fetchPosts(false, true);
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   // Toggle Save Post

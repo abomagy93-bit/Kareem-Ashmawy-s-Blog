@@ -138,10 +138,10 @@ const FALLBACK_POSTS = [
   }
 ];
 
-// Server-side cache for ultra-fast API response times
+// Server-side cache for ultra-fast API response times & real-time auto sync
 let cachedPostsData: any = null;
 let lastCacheTime = 0;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds cache for auto-sync
 
 // API Route: Get all blog posts
 app.get('/api/posts', async (req, res) => {
@@ -266,6 +266,45 @@ app.get('/api/posts', async (req, res) => {
 });
 
 // Route for Robots.txt
+app.post('/api/ai-assistant', async (req, res) => {
+  const { prompt, articleTitle, articleContent, task } = req.body || {};
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (apiKey) {
+      const { GoogleGenAI } = await import('@google/genai');
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `أنت مساعد ذكي مخصص لمنصة وأبحاث المفكر والباحث كريم عشماوي.
+المهمة المطلوب إنجازها: ${task === 'summary' ? 'تقديم تلخيص تنفيذي للمقال في نقاط مركزة وواضحة' : 'الإجابة عن سؤال المطلع بأسلوب فكري عميق وراقٍ'}
+عنوان المقال الأصلي: ${articleTitle || 'أبحاث ومقالات كريم عشماوي'}
+المحتوى المرجعي: ${stripHtml(articleContent || '').slice(0, 4000)}
+
+السؤال أو الطلب: ${prompt || 'لخص أهم النقاط الفكرية في هذا المقال'}
+قدم إجابة متناسقة باللغة العربية مستخدماً تنسيق التنسيق الواضح والتسلسل المنطقي.`,
+      });
+      return res.json({ response: response.text });
+    } else {
+      // Smart offline / fallback responses
+      if (task === 'summary') {
+        const plain = stripHtml(articleContent || '');
+        const excerpt = plain.length > 250 ? plain.slice(0, 250) + '...' : plain;
+        return res.json({
+          response: `📌 **خلاصة المقال والبحث:**\n\n• **المحور الرئيسي:** ${articleTitle || 'دراسات وأبحاث تحليلية'}\n• **الفكرة الجوهرية:** ${excerpt || 'يعالج المقال القضية المطروحة بأسلوب استدلالي نقديا يسعى لتأصيل المفاهيم.'}\n• **النتيجة:** يوصي الباحث بالتأمل في الأدلة والبناء المنطقي للوصول إلى فهم أعمق.`
+        });
+      }
+      return res.json({
+        response: `💡 **إجابة المساعد الذكي:**\nبناءً على مقال "${articleTitle || 'البحث'}"؛ يتمحور التحليل حول تأصيل الأفكار واستخدام المنهج النقدي. يسعدنا متابعة قراءتك لباقي المقالات والمحاضرات المتاحة على المنصة!`
+      });
+    }
+  } catch (err: any) {
+    console.error('AI Assistant Error:', err?.message || err);
+    return res.json({
+      response: `📌 **خلاصة المقال:**\n• ينطوي هذا المقال على تحليل فكري مستفيض حول موضوع "${articleTitle || 'البحث'}".\n• يمكنك قراءة النص الكامل أدناه للاطلاع على التفاصيل والأدلة العلمية.`
+    });
+  }
+});
+
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
   res.send(`User-agent: *

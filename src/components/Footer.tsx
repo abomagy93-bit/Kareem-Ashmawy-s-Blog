@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Rss, Globe, BookOpen, Radio, Heart } from 'lucide-react';
+import { ExternalLink, Rss, Globe, BookOpen, Radio, Heart, Book } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -8,15 +8,15 @@ export const Footer: React.FC = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Logo & Info */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 via-amber-600 to-amber-800 text-black flex items-center justify-center font-extrabold text-lg shadow-md border border-amber-300">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-amber-600 to-amber-800 text-black flex items-center justify-center font-extrabold text-lg shadow-md border border-amber-300 font-cairo">
               ك
             </div>
             <div>
               <p className="font-extrabold text-sm text-gold-gradient font-cairo">
-                مدونة المفكر والباحث كريم عشماوي | Karim Ashmawy Official Blog
+                كريم مجدي محمد عبد الغني عشماوي | مفكر وباحث حر
               </p>
-              <p className="text-slate-500 text-[11px] mt-0.5">
-                جميع الحقوق محفوظة © {new Date().getFullYear()} المفكر والباحث كريم عشماوي
+              <p className="text-slate-400 text-[11px] mt-0.5">
+                مواليد 11 يوليو 1993 (نبروه - المنصورة) • مقيم بالمدينة المنورة
               </p>
             </div>
           </div>
@@ -57,6 +57,21 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
+        {/* Books List Banner */}
+        <div className="p-3.5 rounded-xl bg-slate-950/80 border border-amber-500/20 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-amber-300 font-extrabold">
+            <Book className="w-4 h-4 text-amber-400" />
+            <span>المؤلفات والكتب الفكرية:</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-slate-300 font-bold">
+            <span className="text-amber-200">«مثل نوره»</span>
+            <span className="text-amber-500/30">•</span>
+            <span className="text-amber-200">«محمديم»</span>
+            <span className="text-amber-500/30">•</span>
+            <span className="text-amber-200">«أسرار المحراب»</span>
+          </div>
+        </div>
+
         <div className="pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
           <div className="flex items-center gap-2">
             <Radio className="w-3.5 h-3.5 text-amber-500" />
@@ -64,7 +79,7 @@ export const Footer: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1">
-            <span>تم التطوير بتنسيق ليلي أسود وذهبي فاخر</span>
+            <span>جميع الحقوق محفوظة © {new Date().getFullYear()} المفكر والباحث كريم عشماوي</span>
             <Heart className="w-3 h-3 text-amber-500 fill-current ml-1" />
           </div>
         </div>
@@ -72,3 +87,4 @@ export const Footer: React.FC = () => {
     </footer>
   );
 };
+

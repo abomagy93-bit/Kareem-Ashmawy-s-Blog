@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, ExternalLink, Globe, BookOpen, ArrowUpRight, Users } from 'lucide-react';
+import { Sparkles, ExternalLink, Globe, BookOpen, ArrowUpRight, Users, Youtube, UserCheck, MapPin, Calendar, Book, Feather } from 'lucide-react';
 import { LanguageFilter } from '../types';
 
 interface HeroBannerProps {
@@ -26,6 +26,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
     }
     return 10542; // Base starting count above 10,000
   });
+
+  const [showFullBio, setShowFullBio] = useState<boolean>(true);
 
   useEffect(() => {
     const sessionCounted = sessionStorage.getItem('karim_blog_visitor_counted');
@@ -54,12 +56,75 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           </div>
 
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight tracking-tight font-cairo text-gold-gradient max-w-full">
-            مرحبا بك في مدونة المفكر والباحث الحر كريم مجدي عشماوي
+            السلام عليكم ورحمة الله وبركاته
           </h2>
 
-          <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-3xl">
-            المنصة الشاملة لتصفح وقراءة كافة المقالات والأبحاث والتدوينات باللغتين العربية والإنجليزية بفرز سريع وتجربة تصفح متطورة.
-          </p>
+          {/* Author Biography Section */}
+          <div className="mt-4 p-5 rounded-2xl bg-slate-950/80 border border-amber-500/30 shadow-xl backdrop-blur-md max-w-full space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-500/20 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 text-black flex items-center justify-center font-black text-lg shadow-md border border-amber-300 font-cairo">
+                  ك
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-amber-300 font-cairo flex items-center gap-2">
+                    <span>كريم مجدي محمد عبد الغني عشماوي</span>
+                  </h3>
+                  <p className="text-xs text-amber-400/80 font-bold flex items-center gap-1.5 mt-0.5">
+                    <Feather className="w-3.5 h-3.5 text-amber-400" />
+                    <span>مفكر وباحث حر</span>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowFullBio(!showFullBio)}
+                className="text-xs text-amber-400 hover:text-amber-300 underline font-bold transition-colors"
+              >
+                {showFullBio ? 'إخفاء النبذة' : 'عرض النبذة التعريفية'}
+              </button>
+            </div>
+
+            {showFullBio && (
+              <div className="space-y-3.5 text-xs text-slate-300 leading-relaxed pt-1">
+                <p className="text-slate-200 font-medium">
+                  مفكر وباحث حر، مصري الجنسية، من مواليد <strong>١١ يوليو ١٩٩٣م</strong> بمدينة نبروه - محافظة المنصورة، ومقيم بالمدينة المنورة.
+                </p>
+
+                {/* Author's Books / Publications */}
+                <div className="pt-2 space-y-2">
+                  <div className="flex items-center gap-1.5 text-amber-300 font-extrabold text-xs">
+                    <Book className="w-4 h-4 text-amber-400" />
+                    <span>من مؤلفاته وكتبه البارزة:</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 font-extrabold text-xs shadow-sm">
+                      📖 كتاب «مثل نوره»
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 font-extrabold text-xs shadow-sm">
+                      📖 كتاب «محمديم»
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 font-extrabold text-xs shadow-sm">
+                      📖 كتاب «أسرار المحراب»
+                    </span>
+                  </div>
+                </div>
+
+                {/* Personal Information Tags */}
+                <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-400 border-t border-slate-900/80">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                    <span>الميلاد: 11 يوليو 1993م (نبروه - المنصورة)</span>
+                  </span>
+                  <span className="text-amber-500/40">•</span>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                    <span>الإقامة: المدينة المنورة</span>
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* User Requested Quick Nav Links */}
           <div className="flex flex-wrap items-center gap-3 pt-2 max-w-full">
@@ -82,6 +147,17 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
             >
               <BookOpen className="w-3.5 h-3.5 text-amber-400" />
               <span>موقع القرآن الكريم</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </a>
+
+            <a
+              href="https://youtube.com/playlist?list=PLGUU_GZ29r2y0lhz9ZXxSUhl8DmCc6YL5&si=dAGv9kwPGM0RBonr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600/20 border border-red-500/40 text-red-300 text-xs font-bold hover:bg-red-600/30 hover:border-red-500/60 transition-all"
+            >
+              <Youtube className="w-3.5 h-3.5 text-red-400" />
+              <span>المحاضرات</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
 
@@ -155,4 +231,5 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
     </div>
   );
 };
+
 
