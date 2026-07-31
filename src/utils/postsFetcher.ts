@@ -258,12 +258,15 @@ export async function fetchPostsFromAnySource(showRefreshSpinner = false): Promi
       if (contentType && contentType.includes('application/json')) {
         const data = await res.json();
         if (data?.posts && Array.isArray(data.posts) && data.posts.length > 0) {
+          console.log(`[PostsFetcher] Loaded ${data.posts.length} posts via Server API (/api/posts)`);
           return data.posts;
         }
       }
+    } else {
+      console.info(`[PostsFetcher] /api/posts returned HTTP ${res.status}. Proceeding to client fetch/cache fallback.`);
     }
   } catch (err) {
-    console.warn('/api/posts unavailable, trying JSONP client fetch.', err);
+    console.info('[PostsFetcher] /api/posts route unavailable (expected on static Netlify host). Proceeding to client fallback.');
   }
 
   // 2. Try JSONP directly in browser (100% reliable on Netlify, bypasses CORS)
@@ -271,10 +274,11 @@ export async function fetchPostsFromAnySource(showRefreshSpinner = false): Promi
     try {
       const jsonpPosts = await fetchAllBloggerJsonpPosts();
       if (jsonpPosts.length > 0) {
+        console.log(`[PostsFetcher] Loaded ${jsonpPosts.length} posts live via Blogger JSONP feed.`);
         return jsonpPosts;
       }
     } catch (err) {
-      console.warn('Blogger JSONP fetch failed:', err);
+      console.warn('[PostsFetcher] Blogger JSONP live fetch failed:', err);
     }
   }
 
@@ -285,13 +289,17 @@ export async function fetchPostsFromAnySource(showRefreshSpinner = false): Promi
       const cacheData = await cacheRes.json();
       const parsed = parseBloggerFeed(cacheData);
       if (parsed.length > 0) {
+        console.log(`[PostsFetcher] Loaded ${parsed.length} posts from static asset (/posts-cache.json).`);
         return parsed;
       }
+    } else {
+      console.warn(`[PostsFetcher] /posts-cache.json returned HTTP ${cacheRes.status}`);
     }
   } catch (err) {
-    console.warn('Static posts-cache.json fetch failed:', err);
+    console.warn('[PostsFetcher] Static posts-cache.json fetch failed:', err);
   }
 
   // 4. Fallback to pre-bundled real posts of Karim Ashmawy
+  console.log(`[PostsFetcher] Loaded ${REAL_FALLBACK_POSTS.length} posts from pre-bundled offline cache.`);
   return REAL_FALLBACK_POSTS;
 }

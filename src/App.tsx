@@ -12,6 +12,7 @@ export default function App() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -116,6 +117,7 @@ export default function App() {
     if (isSilent) setAutoSyncStatus('syncing');
 
     try {
+      setFetchError(null);
       const fetchedPosts = await fetchPostsFromAnySource(showRefreshSpinner);
       if (fetchedPosts && fetchedPosts.length > 0) {
         setPosts((prevPosts) => {
@@ -128,9 +130,14 @@ export default function App() {
         setLastSyncedTime(new Date());
         setAutoSyncStatus('synced');
         setTimeout(() => setAutoSyncStatus('idle'), 3000);
+      } else if (posts.length === 0) {
+        setFetchError('تعذر الوصول إلى المقالات حالياً.');
       }
-    } catch (err) {
-      console.error('Failed to fetch posts:', err);
+    } catch (err: any) {
+      console.error('[App] Error in fetchPosts:', err);
+      if (posts.length === 0) {
+        setFetchError(err?.message || 'حدث خطأ أثناء تحميل المقالات');
+      }
       setAutoSyncStatus('idle');
     } finally {
       setLoading(false);
@@ -337,6 +344,21 @@ export default function App() {
           <div className="py-24 flex flex-col items-center justify-center gap-4 text-amber-400/80">
             <Loader2 className="w-10 h-10 animate-spin text-amber-400" />
             <p className="text-sm font-semibold">جاري تحضير كافة مقالات مدونة كريم عشماوي...</p>
+          </div>
+        ) : fetchError && posts.length === 0 ? (
+          /* Error State */
+          <div className="py-20 text-center bg-[#0d1017] rounded-3xl border border-red-500/30 p-8 space-y-4 shadow-xl">
+            <div className="w-16 h-16 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center mx-auto border border-red-500/30">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h4 className="text-lg font-bold text-red-400">تعذر تحميل المقالات</h4>
+            <p className="text-xs text-slate-400 max-w-md mx-auto">{fetchError}</p>
+            <button
+              onClick={() => fetchPosts(true)}
+              className="px-5 py-2.5 rounded-xl bg-amber-500 text-black text-xs font-bold hover:bg-amber-400 transition-colors shadow-md"
+            >
+              إعادة المحاولة
+            </button>
           </div>
         ) : filteredPosts.length === 0 ? (
           /* Empty State */
