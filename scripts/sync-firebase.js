@@ -1,9 +1,17 @@
-import { BlogPost } from '../types';
-import { STATIC_POSTS_CACHE } from '../data/postsCache';
-import { db } from '../lib/firebase';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, setDoc, collection, getDocs } from 'firebase/firestore';
+import fs from 'fs';
 
-function decodeHtmlEntities(str: string): string {
+const firebaseConfig = JSON.parse(fs.readFileSync('firebase-applet-config.json', 'utf8'));
+
+const app = initializeApp(firebaseConfig);
+const databaseId = firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)'
+  ? firebaseConfig.firestoreDatabaseId
+  : undefined;
+
+const db = getFirestore(app, databaseId);
+
+function decodeHtmlEntities(str) {
   if (!str) return '';
   return str
     .replace(/&lt;/g, '<')
@@ -13,20 +21,20 @@ function decodeHtmlEntities(str: string): string {
     .replace(/&amp;/g, '&');
 }
 
-function stripHtml(html: string): string {
+function stripHtml(html) {
   if (!html) return '';
   const decoded = decodeHtmlEntities(html);
   return decoded.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim();
 }
 
-function calculateReadingTime(text: string): number {
+function calculateReadingTime(text) {
   const plain = stripHtml(text);
   const wordCount = plain.split(/\s+/).filter(Boolean).length;
   const minutes = Math.ceil(wordCount / 180);
   return Math.max(1, minutes);
 }
 
-function upgradeImageQuality(url: string | undefined): string | undefined {
+function upgradeImageQuality(url) {
   if (!url) return undefined;
   let src = url.trim().replace(/^["']|["']$/g, '');
   if (src.startsWith('//')) src = 'https:' + src;
@@ -39,7 +47,7 @@ function upgradeImageQuality(url: string | undefined): string | undefined {
   return src;
 }
 
-function extractFirstImage(html: string): string | undefined {
+function extractFirstImage(html) {
   if (!html) return undefined;
   const decoded = decodeHtmlEntities(html);
   const imgMatch = decoded.match(/<img[^>]+src=["']?([^"'\s>]+)["']?/i);
@@ -52,15 +60,13 @@ function extractFirstImage(html: string): string | undefined {
   return undefined;
 }
 
-function detectLanguage(title: string, content: string, categories: string[]): 'ar' | 'en' {
+function detectLanguage(title, content, categories) {
   const catString = categories.join(' ').toLowerCase();
   if (catString.includes('english') || catString.includes('en')) return 'en';
   if (catString.includes('عربي') || catString.includes('عربية')) return 'ar';
-
   const combined = title + ' ' + stripHtml(content).slice(0, 300);
   const latinCount = (combined.match(/[a-zA-Z]/g) || []).length;
   const arabicCount = (combined.match(/[\u0600-\u06FF]/g) || []).length;
-
   if (latinCount > arabicCount && latinCount > 15) return 'en';
   return 'ar';
 }
@@ -74,11 +80,23 @@ const HIGH_RES_FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80"
 ];
 
-export function parseBloggerFeed(data: any): BlogPost[] {
-  const entries = data?.feed?.entry || [];
-  if (entries.length === 0) return [];
+async function syncToFirebase() {
+  console.log('Fetching all real posts from Blogger feed...');
+  let data;
+  try {
+    const res = await fetch('https://karimashmawy.blogspot.com/feeds/posts/default?alt=json&max-results=500');
+    data = await res.json();
+  } catch (e) {
+    console.warn('Network fetch failed, reading from posts-cache.json...');
+    data = JSON.parse(fs.readFileSync('public/posts-cache.json', 'utf8'));
+  }
 
-  return entries.map((entry: any, index: number) => {
+  const entries = data?.feed?.entry || [];
+  console.log(`Processing ${entries.length} posts for Firebase Firestore upload...`);
+
+  let successCount = 0;
+  for (let index = 0; index < entries.length; index++) {
+    const entry = entries[index];
     const rawId = entry.id?.$t || `post-${index}`;
     const cleanId = rawId.includes('.post-') ? rawId.split('.post-')[1] : rawId.includes('post-') ? rawId.split('post-')[1] : rawId;
     const id = cleanId || `post-${index}`;
@@ -92,13 +110,11 @@ export function parseBloggerFeed(data: any): BlogPost[] {
     let authorAvatar = entry.author?.[0]?.gd$image?.src;
     if (authorAvatar && authorAvatar.includes('g/b16-g')) authorAvatar = undefined;
 
-    const altLink = entry.link?.find((l: any) => l.rel === 'alternate')?.href || 'https://karimashmawy.blogspot.com';
-    const categories = entry.category?.map((c: any) => c.term).filter(Boolean) || [];
+    const altLink = entry.link?.find((l) => l.rel === 'alternate')?.href || 'https://karimashmawy.blogspot.com';
+    const categories = entry.category?.map((c) => c.term).filter(Boolean) || [];
 
     let rawThumb = entry.media$thumbnail?.url;
-    if (rawThumb && (rawThumb.includes('blank.gif') || rawThumb.includes('b16-g') || rawThumb.includes('pixel'))) {
-      rawThumb = undefined;
-    }
+    if (rawThumb && (rawThumb.includes('blank.gif') || rawThumb.includes('b16-g'))) rawThumb = undefined;
 
     let thumbnail = extractFirstImage(content);
     if (!thumbnail && rawThumb) thumbnail = upgradeImageQuality(rawThumb);
@@ -106,7 +122,7 @@ export function parseBloggerFeed(data: any): BlogPost[] {
 
     const language = detectLanguage(title, content, categories);
 
-    return {
+    const postDoc = {
       id,
       title,
       content,
@@ -114,81 +130,25 @@ export function parseBloggerFeed(data: any): BlogPost[] {
       publishedDate,
       updatedDate: updatedDate || publishedDate,
       author,
-      authorAvatar,
+      authorAvatar: authorAvatar || '',
       link: altLink,
       categories: categories.length > 0 ? categories : [language === 'ar' ? 'مقالات' : 'Articles'],
       thumbnail,
       readingTimeMinutes: calculateReadingTime(content),
-      language
+      language,
+      orderIndex: index
     };
-  });
-}
 
-export const REAL_FALLBACK_POSTS: BlogPost[] = parseBloggerFeed(STATIC_POSTS_CACHE);
-
-export function formatBloggerPostContent(html: string): string {
-  if (!html) return '';
-  let content = decodeHtmlEntities(html);
-
-  content = content.replace(/(<img[^>]+src=["']?)([^"'\s>]+)(["']?)/gi, (match, p1, p2, p3) => {
-    const upgraded = upgradeImageQuality(p2);
-    return `${p1}${upgraded || p2}${p3} loading="lazy" referrerPolicy="no-referrer"`;
-  });
-
-  content = content.replace(/(<a[^>]+href=["'][^"']+["'])(?![^>]*target=)/gi, '$1 target="_blank" rel="noopener noreferrer"');
-
-  return content;
-}
-
-/**
- * Fetch posts from Firebase Firestore Database.
- * If Firestore is empty, auto-seeds real posts into Firestore.
- */
-export async function fetchPostsFromAnySource(showRefreshSpinner = false): Promise<BlogPost[]> {
-  // 1. Fetch from Firebase Firestore with a 3-second timeout guard
-  try {
-    const firestorePromise = (async () => {
-      const postsRef = collection(db, 'posts');
-      const snapshot = await getDocs(postsRef);
-      if (!snapshot.empty) {
-        const posts: BlogPost[] = [];
-        snapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          posts.push({
-            id: data.id || docSnap.id,
-            title: data.title,
-            content: data.content,
-            snippet: data.snippet,
-            publishedDate: data.publishedDate,
-            updatedDate: data.updatedDate,
-            author: data.author || 'كريم عشماوي',
-            authorAvatar: data.authorAvatar,
-            link: data.link,
-            categories: data.categories || ['مقالات'],
-            thumbnail: data.thumbnail,
-            readingTimeMinutes: data.readingTimeMinutes || calculateReadingTime(data.content || ''),
-            language: data.language || 'ar'
-          });
-        });
-
-        posts.sort((a, b) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime());
-        if (posts.length > 0) {
-          return posts;
-        }
-      }
-      return null;
-    })();
-
-    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
-
-    const result = await Promise.race([firestorePromise, timeoutPromise]);
-    if (result && result.length > 0) {
-      return result;
+    try {
+      await setDoc(doc(db, 'posts', id), postDoc);
+      successCount++;
+    } catch (err) {
+      console.error(`Failed uploading post ${id}:`, err);
     }
-  } catch (err) {
-    console.warn('Firestore fetch encountered issue, using real posts fallback:', err);
   }
 
-  // 2. Return bundled real Karim Ashmawy posts instantly
-  return REAL_FALLBACK_POSTS;
+  console.log(`Successfully synced ${successCount} articles to Firebase Firestore Database!`);
+  process.exit(0);
 }
+
+syncToFirebase();

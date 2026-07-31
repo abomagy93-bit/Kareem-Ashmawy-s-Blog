@@ -135,10 +135,36 @@ export const PostDetail: React.FC<PostDetailProps> = ({
         });
         return;
       } catch (e) {
-        // Fallback
+        // Fallback to clipboard
       }
     }
-    navigator.clipboard.writeText(shareUrl);
+
+    let success = false;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shareUrl);
+        success = true;
+      }
+    } catch (e) {
+      // Clipboard failed or unfocused
+    }
+
+    if (!success) {
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = shareUrl;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      } catch (e) {
+        // ignore
+      }
+    }
+
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
   };
