@@ -54,74 +54,171 @@
   background: rgba(212, 175, 55, 0.6);
 }
 
-/* Blog Article Content Typography in Luxury Night Mode */
+/* Blog Article Content Typography & Format Alignment */
 .article-prose {
   font-size: 1.125rem;
-  line-height: 1.9;
+  line-height: 2;
+  color: #e2e8f0;
+}
+
+.article-prose * {
+  max-width: 100%;
+}
+
+/* Ensure inline font-family from Blogger does not override article typography */
+.article-prose span,
+.article-prose p,
+.article-prose div {
+  font-family: inherit;
+}
+
+/* Override Blogger inline dark text colors to keep high contrast legibility in dark mode */
+.article-prose [style*="color: black"],
+.article-prose [style*="color: #000"],
+.article-prose [style*="color:#000"],
+.article-prose [style*="color: #111"],
+.article-prose [style*="color: #222"],
+.article-prose [style*="color: #333"],
+.article-prose [style*="color: rgb(0, 0, 0)"],
+.article-prose [style*="color: rgb(51, 51, 51)"],
+.article-prose [style*="color: windowtext"] {
+  color: inherit !important;
+}
+
+/* Override Blogger inline white background boxes */
+.article-prose [style*="background-color: white"],
+.article-prose [style*="background-color: #fff"],
+.article-prose [style*="background-color:#fff"],
+.article-prose [style*="background-color: #ffffff"],
+.article-prose [style*="background-color: rgb(255, 255, 255)"] {
+  background-color: transparent !important;
 }
 
 .article-prose p {
   margin-bottom: 1.5rem;
+  color: #e2e8f0;
+  word-wrap: break-word;
 }
 
-.article-prose h1, .article-prose h2, .article-prose h3, .article-prose h4 {
+.article-prose h1, .article-prose h2, .article-prose h3, .article-prose h4, .article-prose h5, .article-prose h6 {
   font-weight: 700;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  margin-top: 2.25rem;
+  margin-bottom: 1.25rem;
   color: #FDE68A;
+  line-height: 1.4;
 }
 
+.article-prose h1 { font-size: 1.75rem; }
 .article-prose h2 {
   font-size: 1.5rem;
   border-bottom: 1px solid rgba(212, 175, 55, 0.3);
   padding-bottom: 0.5rem;
 }
-
-.article-prose h3 {
-  font-size: 1.25rem;
-}
+.article-prose h3 { font-size: 1.3rem; }
+.article-prose h4 { font-size: 1.15rem; }
 
 .article-prose ul, .article-prose ol {
-  margin-bottom: 1.5rem;
-  padding-right: 1.5rem;
+  margin-bottom: 1.75rem;
+  padding-right: 1.75rem;
 }
 
-.article-prose ul {
-  list-style-type: disc;
-}
-
-.article-prose ol {
-  list-style-type: decimal;
-}
+.article-prose ul { list-style-type: disc; }
+.article-prose ol { list-style-type: decimal; }
 
 .article-prose li {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
+  line-height: 1.9;
+}
+
+/* Blogger Image Containers (.separator & .tr-caption-container) */
+.article-prose .separator {
+  margin: 1.75rem auto;
+  text-align: center;
+  clear: both;
 }
 
 .article-prose img {
+  display: block;
+  margin: 1.75rem auto;
+  max-width: 100% !important;
+  height: auto !important;
   border-radius: 1rem;
-  max-width: 100%;
-  height: auto;
-  margin: 1.5rem auto;
   border: 1px solid rgba(212, 175, 55, 0.25);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
 }
 
+.article-prose .tr-caption-container {
+  margin: 1.75rem auto;
+  max-width: 100% !important;
+  text-align: center;
+  border: none !important;
+}
+
+.article-prose .tr-caption-container td {
+  border: none !important;
+  padding: 0 !important;
+}
+
+.article-prose .tr-caption {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  margin-top: 0.5rem;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Blockquotes */
 .article-prose blockquote {
   border-right: 4px solid #D4AF37;
-  padding-right: 1.25rem;
-  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+  margin: 1.75rem 0;
   font-style: italic;
-  background: rgba(212, 175, 55, 0.05);
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
+  background: rgba(212, 175, 55, 0.08);
   border-radius: 0.5rem 0 0 0.5rem;
+  color: #fef08a;
 }
 
+/* External Links */
 .article-prose a {
   color: #FBBF24;
   text-decoration: underline;
   text-underline-offset: 4px;
+  transition: color 0.2s;
+}
+.article-prose a:hover {
+  color: #fde68a;
+}
+
+/* Embedded Media / Videos */
+.article-prose iframe {
+  width: 100% !important;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border-radius: 1rem;
+  margin: 1.75rem 0;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* Tables */
+.article-prose table {
+  width: 100%;
+  margin: 1.75rem 0;
+  border-collapse: collapse;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.article-prose td, .article-prose th {
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.article-prose th {
+  background: rgba(212, 175, 55, 0.15);
+  color: #FDE68A;
+  font-weight: 700;
 }
 
 .article-prose code {
@@ -142,5 +239,5 @@
   overflow-x: auto;
   direction: ltr;
   text-align: left;
-  margin: 1.5rem 0;
+  margin: 1.75rem 0;
 }

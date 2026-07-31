@@ -215,6 +215,172 @@ function parseBloggerFeed(data: any): BlogPost[] {
   });
 }
 
+function parseAtomXmlFeed(xmlString: string): BlogPost[] {
+  if (!xmlString) return [];
+  try {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+    const entries = Array.from(xmlDoc.getElementsByTagName("entry"));
+
+    return entries.map((entry, index) => {
+      const id = entry.getElementsByTagName("id")[0]?.textContent || `post-${index}`;
+      const title = entry.getElementsByTagName("title")[0]?.textContent || 'بدون عنوان';
+      const content = entry.getElementsByTagName("content")[0]?.textContent || entry.getElementsByTagName("summary")[0]?.textContent || '';
+      const snippet = stripHtml(content).slice(0, 180) + '...';
+      const publishedDate = entry.getElementsByTagName("published")[0]?.textContent || new Date().toISOString();
+      const updatedDate = entry.getElementsByTagName("updated")[0]?.textContent || undefined;
+      
+      const authorElem = entry.getElementsByTagName("author")[0];
+      const author = authorElem?.getElementsByTagName("name")[0]?.textContent || 'كريم عشماوي';
+      
+      const links = Array.from(entry.getElementsByTagName("link"));
+      const altLink = links.find(l => l.getAttribute("rel") === "alternate")?.getAttribute("href") || 'https://karimashmawy.blogspot.com';
+      const categories = Array.from(entry.getElementsByTagName("category")).map(c => c.getAttribute("term")).filter(Boolean) as string[];
+
+      let rawThumb = entry.getElementsByTagName("media:thumbnail")[0]?.getAttribute("url") || entry.getElementsByTagNameNS("*", "thumbnail")[0]?.getAttribute("url");
+      if (rawThumb && (rawThumb.includes('blank.gif') || rawThumb.includes('b16-g') || rawThumb.includes('pixel'))) {
+        rawThumb = undefined;
+      }
+
+      let thumbnail = extractFirstImage(content);
+      if (!thumbnail && rawThumb) {
+        thumbnail = upgradeImageQuality(rawThumb);
+      }
+      if (!thumbnail) {
+        thumbnail = HIGH_RES_FALLBACK_IMAGES[index % HIGH_RES_FALLBACK_IMAGES.length];
+      }
+
+      const language = detectLanguage(title, content, categories);
+
+      return {
+        id,
+        title,
+        content,
+        snippet,
+        publishedDate,
+        updatedDate,
+        author,
+        link: altLink,
+        categories: categories.length > 0 ? categories : [language === 'ar' ? 'مقالات' : 'Articles'],
+        thumbnail,
+        readingTimeMinutes: calculateReadingTime(content),
+        language
+      };
+    });
+  } catch (e) {
+    console.error('Error parsing Atom XML feed:', e);
+    return [];
+  }
+}
+
+export function formatBloggerPostContent(html: string): string {
+  if (!html) return '';
+  let content = decodeHtmlEntities(html);
+
+  // Upgrade embedded img src quality in the article body to s1600 HD
+  content = content.replace(/(<img[^>]+src=["']?)([^"'\s>]+)(["']?)/gi, (match, p1, p2, p3) => {
+    const upgraded = upgradeImageQuality(p2);
+    return `${p1}${upgraded || p2}${p3} loading="lazy" referrerPolicy="no-referrer"`;
+  });
+
+  // Make external links open safely in new tab
+  content = content.replace(/(<a[^>]+href=["'][^"']+["'])(?![^>]*target=)/gi, '$1 target="_blank" rel="noopener noreferrer"');
+
+  return content;
+}
+
+async function fetchAllBloggerJsonPosts(): Promise<BlogPost[]> {
+  const allPosts: BlogPost[] = [];
+  let startIndex = 1;
+  const maxResults = 150;
+  let hasMore = true;
+  let attempts = 0;
+
+  while (hasMore && attempts < 10) {
+    attempts++;
+    const feedUrl = `https://karimashmawy.blogspot.com/feeds/posts/default?alt=json&max-results=${maxResults}&start-index=${startIndex}`;
+    
+    let res: Response | null = null;
+    try {
+      res = await fetch(feedUrl);
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+    } catch {
+      // Try proxy if direct request failed
+      try {
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`;
+        res = await fetch(proxyUrl);
+      } catch (err) {
+        console.warn('Proxy fetch failed for start-index', startIndex, err);
+      }
+    }
+
+    if (!res || !res.ok) {
+      break;
+    }
+
+    const data = await res.json();
+    const batch = parseBloggerFeed(data);
+    if (batch.length === 0) {
+      hasMore = false;
+    } else {
+      allPosts.push(...batch);
+      const totalResults = parseInt(data?.feed?.openSearch$totalResults?.$t || '0', 10);
+      if (allPosts.length >= totalResults || batch.length < maxResults) {
+        hasMore = false;
+      } else {
+        startIndex += maxResults;
+      }
+    }
+  }
+
+  return allPosts;
+}
+
+async function fetchAllBloggerXmlPosts(): Promise<BlogPost[]> {
+  const allPosts: BlogPost[] = [];
+  let startIndex = 1;
+  const maxResults = 150;
+  let hasMore = true;
+  let attempts = 0;
+
+  while (hasMore && attempts < 10) {
+    attempts++;
+    const feedUrl = `https://karimashmawy.blogspot.com/feeds/posts/default?max-results=${maxResults}&start-index=${startIndex}`;
+    
+    let res: Response | null = null;
+    try {
+      res = await fetch(feedUrl);
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+    } catch {
+      try {
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`;
+        res = await fetch(proxyUrl);
+      } catch (err) {
+        console.warn('XML Proxy fetch failed for start-index', startIndex, err);
+      }
+    }
+
+    if (!res || !res.ok) {
+      break;
+    }
+
+    const xmlText = await res.text();
+    const batch = parseAtomXmlFeed(xmlText);
+    if (batch.length === 0) {
+      hasMore = false;
+    } else {
+      allPosts.push(...batch);
+      if (batch.length < maxResults) {
+        hasMore = false;
+      } else {
+        startIndex += maxResults;
+      }
+    }
+  }
+
+  return allPosts;
+}
+
 export async function fetchPostsFromAnySource(showRefreshSpinner = false): Promise<BlogPost[]> {
   // 1. Try local Express API route first
   try {
@@ -233,50 +399,24 @@ export async function fetchPostsFromAnySource(showRefreshSpinner = false): Promi
     console.warn('Backend /api/posts route unavailable, switching to direct client fetch.', err);
   }
 
-  // 2. Direct client-side fetch from Blogger API (works on Netlify / static hosts)
+  // 2. Client-side paginated fetch from Blogger JSON API (gets ALL posts on Netlify)
   try {
-    const feedUrl = 'https://karimashmawy.blogspot.com/feeds/posts/default?alt=json&max-results=500';
-    const res = await fetch(feedUrl);
-    if (res.ok) {
-      const data = await res.json();
-      const parsedPosts = parseBloggerFeed(data);
-      if (parsedPosts.length > 0) {
-        return parsedPosts;
-      }
+    const jsonPosts = await fetchAllBloggerJsonPosts();
+    if (jsonPosts.length > 0) {
+      return jsonPosts;
     }
   } catch (err) {
-    console.warn('Direct Blogger fetch failed, trying RSS-to-JSON fallback proxy.', err);
+    console.warn('Direct Blogger JSON fetch failed, trying XML feed parsing.', err);
   }
 
-  // 3. Fallback via rss2json API for static environments
+  // 3. Fallback to client-side paginated fetch from Blogger Atom XML feed
   try {
-    const rssProxyUrl = 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fkarimashmawy.blogspot.com%2Ffeeds%2Fposts%2Fdefault';
-    const res = await fetch(rssProxyUrl);
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.items && Array.isArray(data.items) && data.items.length > 0) {
-        const postsFromRss: BlogPost[] = data.items.map((item: any, index: number) => {
-          const content = item.content || item.description || '';
-          const language = detectLanguage(item.title, content, item.categories || []);
-          return {
-            id: item.guid || `rss-${index}`,
-            title: item.title,
-            content: content,
-            snippet: stripHtml(content).slice(0, 180) + '...',
-            publishedDate: item.pubDate || new Date().toISOString(),
-            author: item.author || 'كريم عشماوي',
-            link: item.link || 'https://karimashmawy.blogspot.com',
-            categories: item.categories && item.categories.length > 0 ? item.categories : [language === 'ar' ? 'مقالات' : 'Articles'],
-            thumbnail: extractFirstImage(content) || HIGH_RES_FALLBACK_IMAGES[index % HIGH_RES_FALLBACK_IMAGES.length],
-            readingTimeMinutes: calculateReadingTime(content),
-            language: language
-          };
-        });
-        return postsFromRss;
-      }
+    const xmlPosts = await fetchAllBloggerXmlPosts();
+    if (xmlPosts.length > 0) {
+      return xmlPosts;
     }
   } catch (err) {
-    console.warn('RSS proxy fetch failed.', err);
+    console.warn('Blogger XML feed parsing failed.', err);
   }
 
   // 4. Return robust static fallback posts if all network requests fail

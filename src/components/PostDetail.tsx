@@ -1,33 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowRight,
   Bookmark,
   Share2,
   ExternalLink,
-  Sun,
-  Moon,
-  Coffee,
   Calendar,
   Clock,
   User,
   Check,
   Globe,
   BookOpen,
-  Volume2,
-  VolumeX,
-  Play,
-  Pause,
-  Sparkles,
-  Send,
-  ThumbsUp,
   Heart,
   Lightbulb,
-  BookMarked,
-  Printer,
-  X,
-  Bot
+  BookMarked
 } from 'lucide-react';
 import { BlogPost, ReadingSettings } from '../types';
+import { formatBloggerPostContent } from '../utils/postsFetcher';
 
 interface PostDetailProps {
   post: BlogPost;
@@ -52,22 +40,6 @@ export const PostDetail: React.FC<PostDetailProps> = ({
   // Scroll Progress Bar State
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  // Audio Reading TTS State
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [audioSpeed, setAudioSpeed] = useState<number>(1);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-
-  // AI Assistant Drawer State
-  const [showAiDrawer, setShowAiDrawer] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [aiMessages, setAiMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string }>>([
-    {
-      sender: 'ai',
-      text: `مرحباً بك! أنا المساعد الذكي لبحوث أ/ كريم مجدي عشماوي. يمكنك طلب ملخص للمقال أو طرح أي سؤال يتعلق بالأفكار والأدلة المطروحة هنا.`
-    }
-  ]);
-  const [aiLoading, setAiLoading] = useState(false);
-
   // User Reactions State
   const [reactions, setReactions] = useState(() => {
     const saved = localStorage.getItem(`post_reactions_${post.id}`);
@@ -89,97 +61,50 @@ export const PostDetail: React.FC<PostDetailProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Cleanup Speech Synthesis on Unmount
+  // Update Page Title and Social OG Meta Tags dynamically for Article
   useEffect(() => {
-    return () => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
+    const originalTitle = document.title;
+    document.title = `${post.title} | كريم عشماوي`;
+
+    const setMetaTag = (selector: string, content: string) => {
+      let el = document.querySelector(selector);
+      if (!el) {
+        el = document.createElement('meta');
+        if (selector.startsWith('meta[property=')) {
+          const prop = selector.match(/property=["']([^"']+)["']/)?.[1];
+          if (prop) el.setAttribute('property', prop);
+        } else if (selector.startsWith('meta[name=')) {
+          const name = selector.match(/name=["']([^"']+)["']/)?.[1];
+          if (name) el.setAttribute('name', name);
+        }
+        document.head.appendChild(el);
       }
+      el.setAttribute('content', content);
     };
-  }, []);
 
-  // Audio Speech Synthesis Function
-  const toggleAudioSpeech = () => {
-    if (!('speechSynthesis' in window)) {
-      alert('عذراً، خاصية القراءة الصوتية غير مدعومة في متصفحك الحالي.');
-      return;
-    }
+    const imageUrl = post.thumbnail && post.thumbnail.startsWith('http')
+      ? post.thumbnail
+      : 'https://kareem-ashmawy.netlify.app/og-image.jpg';
 
-    if (isPlayingAudio) {
-      window.speechSynthesis.pause();
-      setIsPlayingAudio(false);
-    } else {
-      if (window.speechSynthesis.paused && utteranceRef.current) {
-        window.speechSynthesis.resume();
-        setIsPlayingAudio(true);
-        return;
-      }
+    setMetaTag('meta[property="og:title"]', post.title);
+    setMetaTag('meta[property="og:description"]', post.snippet);
+    setMetaTag('meta[property="og:image"]', imageUrl);
+    setMetaTag('meta[property="og:image:secure_url"]', imageUrl);
+    setMetaTag('meta[name="twitter:title"]', post.title);
+    setMetaTag('meta[name="twitter:description"]', post.snippet);
+    setMetaTag('meta[name="twitter:image"]', imageUrl);
 
-      window.speechSynthesis.cancel();
-
-      // Extract plain text from post content
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = post.content;
-      const plainText = `${post.title}. ${tempDiv.textContent || tempDiv.innerText || ''}`;
-
-      const utterance = new SpeechSynthesisUtterance(plainText.slice(0, 3000));
-      utterance.lang = isEnglish ? 'en-US' : 'ar-SA';
-      utterance.rate = audioSpeed;
-
-      utterance.onend = () => setIsPlayingAudio(false);
-      utterance.onerror = () => setIsPlayingAudio(false);
-
-      utteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
-      setIsPlayingAudio(true);
-    }
-  };
-
-  const changeAudioSpeed = (speed: number) => {
-    setAudioSpeed(speed);
-    if (utteranceRef.current && isPlayingAudio) {
-      window.speechSynthesis.cancel();
-      setIsPlayingAudio(false);
-      setTimeout(() => toggleAudioSpeech(), 100);
-    }
-  };
-
-  // AI Assistant Call
-  const handleAskAi = async (customPrompt?: string, taskType: 'chat' | 'summary' = 'chat') => {
-    const queryPrompt = customPrompt || aiPrompt;
-    if (!queryPrompt.trim() && taskType === 'chat') return;
-
-    if (taskType === 'chat') {
-      setAiMessages((prev) => [...prev, { sender: 'user', text: queryPrompt }]);
-      setAiPrompt('');
-    }
-    setAiLoading(true);
-
-    try {
-      const res = await fetch('/api/ai-assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: queryPrompt,
-          articleTitle: post.title,
-          articleContent: post.content,
-          task: taskType
-        })
-      });
-      const data = await res.json();
-      setAiMessages((prev) => [
-        ...prev,
-        { sender: 'ai', text: data.response || 'شكراً لاهتمامك، جاري تحديث بيانات البحث.' }
-      ]);
-    } catch (err) {
-      setAiMessages((prev) => [
-        ...prev,
-        { sender: 'ai', text: 'يتطرق المقال لنقاط بحثية مفصلية، ننصح بقراءة النص الكامل للاستفادة القصوى.' }
-      ]);
-    } finally {
-      setAiLoading(false);
-    }
-  };
+    return () => {
+      document.title = originalTitle;
+      setMetaTag('meta[property="og:title"]', 'مدونة المفكر والباحث كريم عشماوي | Karim Ashmawy Blog');
+      setMetaTag('meta[property="og:description"]', 'اقرأ أحدث المقالات والدراسات للمفكر والباحث كريم عشماوي باللغتين العربية والإنجليزية.');
+      setMetaTag('meta[property="og:image"]', 'https://kareem-ashmawy.netlify.app/og-image.jpg');
+      setMetaTag('meta[property="og:image:secure_url"]', 'https://kareem-ashmawy.netlify.app/og-image.jpg');
+      setMetaTag('meta[name="twitter:title"]', 'مدونة المفكر والباحث كريم عشماوي');
+      setMetaTag('meta[name="twitter:description"]', 'مقالات وأبحاث المفكر والباحث كريم عشماوي باللغتين العربية والإنجليزية.');
+      setMetaTag('meta[name="twitter:image"]', 'https://kareem-ashmawy.netlify.app/og-image.jpg');
+    };
+  }, [post]);
 
   // Handle User Reaction
   const handleReaction = (type: 'inspiring' | 'valuable' | 'loved') => {
@@ -217,11 +142,9 @@ export const PostDetail: React.FC<PostDetailProps> = ({
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
-  // Theme styling for article reader
+  // Fixed Luxury Dark Theme
   const getContainerBg = () => {
-    if (settings.theme === 'sepia') return 'bg-[#18140c] text-[#e6d7bc] border-amber-900/40';
-    if (settings.theme === 'light') return 'bg-[#faf7f2] text-[#1c1917] border-amber-200';
-    return 'bg-[#07090e] text-slate-100 border-amber-500/20'; // Luxury Dark (default)
+    return 'bg-[#07090e] text-slate-100 border-amber-500/20';
   };
 
   const getFontFamilyClass = () => {
@@ -279,82 +202,6 @@ export const PostDetail: React.FC<PostDetailProps> = ({
 
         {/* Reading Controls Toolbar */}
         <div className="flex items-center gap-2 overflow-x-auto">
-          {/* Audio TTS Reader Controls */}
-          <div className="flex items-center rounded-xl bg-slate-900/90 p-1 border border-amber-500/30 text-xs">
-            <button
-              onClick={toggleAudioSpeech}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold transition-all ${
-                isPlayingAudio
-                  ? 'bg-amber-500 text-black animate-pulse'
-                  : 'text-amber-300 hover:bg-slate-800'
-              }`}
-              title="استمع للمقال بصوت افتراضي"
-            >
-              {isPlayingAudio ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{isPlayingAudio ? 'إيقاف الصوتي' : 'استمع للمقال'}</span>
-            </button>
-            {isPlayingAudio && (
-              <div className="flex items-center gap-1 px-1 border-r border-amber-500/20 mr-1">
-                {[1, 1.25, 1.5].map((speed) => (
-                  <button
-                    key={speed}
-                    onClick={() => changeAudioSpeed(speed)}
-                    className={`px-1.5 py-0.5 text-[10px] rounded font-mono ${
-                      audioSpeed === speed ? 'bg-amber-500/30 text-amber-300 font-bold' : 'text-slate-400'
-                    }`}
-                  >
-                    {speed}x
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* AI Smart Summary Toggle Button */}
-          <button
-            onClick={() => {
-              setShowAiDrawer(true);
-              if (aiMessages.length === 1) {
-                handleAskAi('ملخص المقال', 'summary');
-              }
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/30 border border-amber-500/40 text-amber-300 text-xs font-extrabold hover:from-amber-500 hover:to-amber-600 hover:text-black transition-all shadow-md"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">المساعد الذكي</span>
-          </button>
-
-          {/* Theme Selector */}
-          <div className="flex items-center rounded-xl bg-slate-900 p-1 border border-amber-500/20">
-            <button
-              onClick={() => setSettings((s) => ({ ...s, theme: 'dark' }))}
-              className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
-                settings.theme === 'dark' ? 'bg-amber-500 text-black shadow-sm font-bold' : 'text-slate-400'
-              }`}
-              title="مظهر ليلي أسود وذهبي"
-            >
-              <Moon className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setSettings((s) => ({ ...s, theme: 'sepia' }))}
-              className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
-                settings.theme === 'sepia' ? 'bg-amber-500 text-black shadow-sm font-bold' : 'text-slate-400'
-              }`}
-              title="مظهر دافئ (سيبيا)"
-            >
-              <Coffee className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setSettings((s) => ({ ...s, theme: 'light' }))}
-              className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
-                settings.theme === 'light' ? 'bg-amber-500 text-black shadow-sm font-bold' : 'text-slate-400'
-              }`}
-              title="مظهر فاتح"
-            >
-              <Sun className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
           {/* Font Size Selector */}
           <div className="flex items-center rounded-xl bg-slate-900 p-1 border border-amber-500/20">
             <button
@@ -442,7 +289,7 @@ export const PostDetail: React.FC<PostDetailProps> = ({
         {/* Post HTML Content */}
         <div
           className={`article-prose ${getFontSizeClass()}`}
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: formatBloggerPostContent(post.content) }}
         />
 
         {/* Reader Reactions Box */}
@@ -528,86 +375,8 @@ export const PostDetail: React.FC<PostDetailProps> = ({
           </div>
         </div>
       </main>
-
-      {/* AI Smart Assistant Slide-Over Drawer */}
-      {showAiDrawer && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md bg-[#090d16] border-r border-amber-500/30 h-full flex flex-col shadow-2xl text-slate-100">
-            {/* Drawer Header */}
-            <div className="p-4 border-b border-amber-500/20 bg-slate-950 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Bot className="w-5 h-5 text-amber-400" />
-                <h3 className="font-bold text-amber-300 text-sm font-cairo">المساعد الذكي لمقالات كريم عشماوي</h3>
-              </div>
-              <button
-                onClick={() => setShowAiDrawer(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* AI Messages Container */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs">
-              {aiMessages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`p-3.5 rounded-2xl leading-relaxed ${
-                    msg.sender === 'user'
-                      ? 'bg-amber-500/20 text-amber-200 border border-amber-500/30 mr-6'
-                      : 'bg-slate-900/90 text-slate-200 border border-slate-800 ml-2 whitespace-pre-wrap'
-                  }`}
-                >
-                  {msg.text}
-                </div>
-              ))}
-              {aiLoading && (
-                <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-amber-400 flex items-center gap-2 animate-pulse">
-                  <Sparkles className="w-4 h-4 animate-spin" />
-                  <span>جاري تحليل المقال وإعداد الإجابة...</span>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Actions & Input Box */}
-            <div className="p-4 border-t border-amber-500/20 bg-slate-950 space-y-3">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleAskAi('تقديم ملخص تنفيذي للمقال', 'summary')}
-                  className="flex-1 py-1.5 px-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold hover:bg-amber-500/20"
-                >
-                  📌 تلخيص المقال
-                </button>
-                <button
-                  onClick={() => handleAskAi('ما هي الأفكار والنقاط المنهجية في هذا المقال؟', 'chat')}
-                  className="flex-1 py-1.5 px-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold hover:bg-amber-500/20"
-                >
-                  💡 النقاط الجوهرية
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAskAi()}
-                  placeholder="اطرح سؤالك حول المقال..."
-                  className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
-                />
-                <button
-                  onClick={() => handleAskAi()}
-                  disabled={aiLoading || !aiPrompt.trim()}
-                  className="p-2 rounded-xl bg-amber-500 text-black hover:bg-amber-400 disabled:opacity-50 transition-all font-bold"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
+
 

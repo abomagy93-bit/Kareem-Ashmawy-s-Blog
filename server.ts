@@ -200,37 +200,59 @@ app.get('/api/posts', async (req, res) => {
   }
 
   try {
-    // Blogger API max-results=500 fetches up to 500 posts in a single request (all articles)
-    const feedUrl = 'https://karimashmawy.blogspot.com/feeds/posts/default?alt=json&max-results=500';
-    
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const allEntries: any[] = [];
+    let startIndex = 1;
+    const maxResults = 150;
+    let hasMore = true;
+    let attempts = 0;
 
-    const response = await fetch(feedUrl, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) BlogReaderApp/2.0',
-        'Accept': 'application/json, text/plain, */*'
+    while (hasMore && attempts < 10) {
+      attempts++;
+      const feedUrl = `https://karimashmawy.blogspot.com/feeds/posts/default?alt=json&max-results=${maxResults}&start-index=${startIndex}`;
+      
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+
+      try {
+        const response = await fetch(feedUrl, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) BlogReaderApp/2.0',
+            'Accept': 'application/json, text/plain, */*'
+          }
+        });
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+          hasMore = false;
+          break;
+        }
+
+        const data = await response.json();
+        const entries = data?.feed?.entry || [];
+        if (entries.length === 0) {
+          hasMore = false;
+        } else {
+          allEntries.push(...entries);
+          const totalResults = parseInt(data?.feed?.openSearch$totalResults?.$t || '0', 10);
+          if (allEntries.length >= totalResults || entries.length < maxResults) {
+            hasMore = false;
+          } else {
+            startIndex += maxResults;
+          }
+        }
+      } catch (e) {
+        clearTimeout(timeout);
+        hasMore = false;
       }
-    });
+    }
 
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      console.warn(`Blogger API returned status ${response.status}. Using fallback posts.`);
+    if (allEntries.length === 0) {
       const result = { posts: FALLBACK_POSTS, source: 'fallback', blogUrl: 'https://karimashmawy.blogspot.com' };
       return res.json(result);
     }
 
-    const data = await response.json();
-    const entries = data?.feed?.entry || [];
-
-    if (entries.length === 0) {
-      const result = { posts: FALLBACK_POSTS, source: 'fallback', blogUrl: 'https://karimashmawy.blogspot.com' };
-      return res.json(result);
-    }
-
-    const posts = entries.map((entry: any, index: number) => {
+    const posts = allEntries.map((entry: any, index: number) => {
       const id = entry.id?.$t || `post-${index}`;
       const title = entry.title?.$t || 'بدون عنوان';
       const content = entry.content?.$t || entry.summary?.$t || '';
@@ -291,7 +313,7 @@ app.get('/api/posts', async (req, res) => {
       posts,
       totalCount: posts.length,
       source: 'live',
-      blogTitle: data?.feed?.title?.$t || 'مدونة كريم عشماوي',
+      blogTitle: 'مدونة المفكر والباحث كريم عشماوي',
       blogUrl: 'https://karimashmawy.blogspot.com'
     };
 
