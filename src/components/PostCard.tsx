@@ -45,7 +45,11 @@ export const PostCard: React.FC<PostCardProps> = ({
             loading="lazy"
             referrerPolicy="no-referrer"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&w=1200&q=80';
+              const target = e.target as HTMLImageElement;
+              if (!target.dataset.failed) {
+                target.dataset.failed = 'true';
+                target.src = 'https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&w=1200&q=80';
+              }
             }}
           />
         ) : (

@@ -1,8 +1,19 @@
 import { BlogPost } from '../types';
 
+function decodeHtmlEntities(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+
 function stripHtml(html: string): string {
   if (!html) return '';
-  return html.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim();
+  const decoded = decodeHtmlEntities(html);
+  return decoded.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim();
 }
 
 function calculateReadingTime(text: string): number {
@@ -14,21 +25,56 @@ function calculateReadingTime(text: string): number {
 
 function upgradeImageQuality(url: string | undefined): string | undefined {
   if (!url) return undefined;
-  let src = url;
-  if (src.startsWith('http://')) {
+  let src = url.trim();
+
+  // Strip leading/trailing quotes
+  src = src.replace(/^["']|["']$/g, '');
+
+  if (src.startsWith('//')) {
+    src = 'https:' + src;
+  } else if (src.startsWith('http://')) {
     src = src.replace('http://', 'https://');
   }
+
+  // Handle path-based sizing parameters (/s72-c/, /s320/, /s640/, /w640-h400/) -> /s1600/
   src = src.replace(/\/s\d+([-_][a-z0-9-]+)?\//i, '/s1600/');
   src = src.replace(/\/w\d+-h\d+[^/]*\//i, '/s1600/');
+
+  // Handle equals-based sizing parameters (=s72-c, =s320, =w640-h400) -> =s1600
+  src = src.replace(/=s\d+[-_a-z0-9]*/i, '=s1600');
+  src = src.replace(/=w\d+-h\d+[-_a-z0-9]*/i, '=s1600');
+
   return src;
 }
 
 function extractFirstImage(html: string): string | undefined {
   if (!html) return undefined;
-  const imgMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  const decoded = decodeHtmlEntities(html);
+
+  // 1. Match standard <img src="...">
+  const imgMatch = decoded.match(/<img[^>]+src=["']?([^"'\s>]+)["']?/i);
   if (imgMatch && imgMatch[1]) {
-    return upgradeImageQuality(imgMatch[1]);
+    const cleaned = upgradeImageQuality(imgMatch[1]);
+    if (cleaned && !cleaned.includes('blank.gif') && !cleaned.includes('b16-g')) {
+      return cleaned;
+    }
   }
+
+  // 2. Match direct image links <a href="....jpg|png|webp|gif">
+  const linkMatch = decoded.match(/<a[^>]+href=["']?([^"'\s>]+\.(?:jpg|jpeg|png|webp|gif))["']?/i);
+  if (linkMatch && linkMatch[1]) {
+    return upgradeImageQuality(linkMatch[1]);
+  }
+
+  // 3. Match background-image: url(...)
+  const bgMatch = decoded.match(/url\(["']?([^"'\)]+)["']?\)/i);
+  if (bgMatch && bgMatch[1]) {
+    const cleaned = upgradeImageQuality(bgMatch[1]);
+    if (cleaned && !cleaned.includes('blank.gif')) {
+      return cleaned;
+    }
+  }
+
   return undefined;
 }
 
@@ -136,9 +182,14 @@ function parseBloggerFeed(data: any): BlogPost[] {
     const altLink = entry.link?.find((l: any) => l.rel === 'alternate')?.href || 'https://karimashmawy.blogspot.com';
     const categories = entry.category?.map((c: any) => c.term).filter(Boolean) || [];
 
-    let thumbnail = upgradeImageQuality(entry.media$thumbnail?.url);
-    if (!thumbnail) {
-      thumbnail = extractFirstImage(content);
+    let rawThumb = entry.media$thumbnail?.url;
+    if (rawThumb && (rawThumb.includes('blank.gif') || rawThumb.includes('b16-g') || rawThumb.includes('pixel'))) {
+      rawThumb = undefined;
+    }
+
+    let thumbnail = extractFirstImage(content);
+    if (!thumbnail && rawThumb) {
+      thumbnail = upgradeImageQuality(rawThumb);
     }
     if (!thumbnail) {
       thumbnail = HIGH_RES_FALLBACK_IMAGES[index % HIGH_RES_FALLBACK_IMAGES.length];
