@@ -176,49 +176,21 @@ export default function App() {
   };
 
   // Share post handler with dedicated article URL link
-  const handleSharePost = async (post: BlogPost, e: React.MouseEvent) => {
+  const handleSharePost = (post: BlogPost, e: React.MouseEvent) => {
     e.stopPropagation();
     const shareUrl = `${window.location.origin}${window.location.pathname}?post=${encodeURIComponent(post.id)}`;
     if (navigator.share) {
-      try {
-        await navigator.share({
+      navigator
+        .share({
           title: post.title,
           text: post.snippet,
           url: shareUrl,
-        });
-        return;
-      } catch (err) {
-        // Fallback to clipboard
-      }
+        })
+        .catch(() => {});
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      showToast('تم نسخ رابط المقال المباشر إلى الحافظة');
     }
-
-    let success = false;
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(shareUrl);
-        success = true;
-      }
-    } catch (err) {
-      // Clipboard failed or unfocused
-    }
-
-    if (!success) {
-      try {
-        const textArea = document.createElement('textarea');
-        textArea.value = shareUrl;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        document.execCommand('copy');
-        textArea.remove();
-      } catch (err) {
-        // ignore
-      }
-    }
-
-    showToast('تم نسخ رابط المقال المباشر إلى الحافظة');
   };
 
   // Sync URL route with selected article for dedicated page URLs

@@ -17,8 +17,7 @@ async function buildCache() {
     if (!fs.existsSync('src/data')) {
       fs.mkdirSync('src/data', { recursive: true });
     }
-    const fileContent = 'export const STATIC_POSTS_CACHE = ' + JSON.stringify(data, null, 2) + ';\n';
-    fs.writeFileSync('src/data/postsCache.ts', fileContent);
+    fs.writeFileSync('src/data/postsCache.json', JSON.stringify(data, null, 2));
     console.log('Build cache successfully updated!');
   } catch (err) {
     console.warn('Could not update cache online, using existing cache file.', err);
