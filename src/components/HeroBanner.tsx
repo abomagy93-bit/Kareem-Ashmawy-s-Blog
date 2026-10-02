@@ -107,6 +107,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 font-extrabold text-xs shadow-sm">
                       📖 كتاب «أسرار المحراب»
                     </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 font-extrabold text-xs shadow-sm">
+                      📖 كتاب «قصة تروم المسيحية»
+                    </span>
                   </div>
                 </div>
 

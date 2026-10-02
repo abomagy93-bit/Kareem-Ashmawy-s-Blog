@@ -69,6 +69,8 @@ export const Footer: React.FC = () => {
             <span className="text-amber-200">«محمديم»</span>
             <span className="text-amber-500/30">•</span>
             <span className="text-amber-200">«أسرار المحراب»</span>
+            <span className="text-amber-500/30">•</span>
+            <span className="text-amber-200">«قصة تروم المسيحية»</span>
           </div>
         </div>
 
