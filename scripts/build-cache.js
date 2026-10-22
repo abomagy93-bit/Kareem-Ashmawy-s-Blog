@@ -22,7 +22,13 @@ async function buildCache() {
       return;
     }
 
-    const jsonString = JSON.stringify(data, null, 2);
+    let jsonString = JSON.stringify(data, null, 2);
+    // Sanitize any legacy domains
+    jsonString = jsonString
+      .replace(/kareem-ashmawy\.netlify\.app/gi, 'karim-ashmawy.netlify.app')
+      .replace(/kareemashmawy\.netlify\.app/gi, 'karim-ashmawy.netlify.app')
+      .replace(/kareem-ashmawy\.blogspot\.com/gi, 'karimashmawy.blogspot.com')
+      .replace(/sites\.google\.com\/view\/kareemashmawy/gi, 'sites.google.com/view/karimashmawy');
     // Double-check JSON validity before writing
     JSON.parse(jsonString);
 

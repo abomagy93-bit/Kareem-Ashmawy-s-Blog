@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { useLocation } from 'react-router-dom';
 import { Header } from './components/Header';
 import { HeroBanner } from './components/HeroBanner';
 import { PostCard } from './components/PostCard';
@@ -13,6 +15,17 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/en')) {
+      setLanguageFilter('en');
+    } else if (location.pathname.startsWith('/ar')) {
+      setLanguageFilter('ar');
+    } else {
+      setLanguageFilter('all');
+    }
+  }, [location.pathname]);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -268,8 +281,22 @@ export default function App() {
       });
   }, [posts, searchQuery, languageFilter, showSavedOnly, savedPostIds, sortBy]);
 
+  const isEn = languageFilter === 'en';
+  const lang = isEn ? 'en' : 'ar';
+  const baseUrl = 'https://kareem-ashmawy.netlify.app';
+  const canonical = `${baseUrl}/${lang === 'ar' ? '' : lang}`;
+
   return (
-    <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col font-cairo transition-colors duration-200 overflow-x-hidden max-w-full">
+    <div className={`min-h-screen bg-[#07090e] text-slate-100 flex flex-col font-cairo transition-colors duration-200 overflow-x-hidden max-w-full ${readingSettings.theme === 'dark' ? 'dark' : ''}`}>
+      <Helmet>
+        <html lang={lang} />
+        <title>{isEn ? 'Karim Ashmawy Blog | Thinker & Researcher' : 'مدونة المفكر والباحث كريم عشماوي'}</title>
+        <meta name="description" content={isEn ? 'Official blog of researcher Karim Ashmawy. Explore articles on technology, engineering, and future thinking.' : 'الموقع والمدونة الرسمية للمفكر والباحث كريم عشماوي، مؤلف كتب: مثل نوره، محمديم، أسرار المحراب، وقصة تروم المسيحية.'} />
+        <link rel="canonical" href={canonical} />
+        <link rel="alternate" hrefLang="ar" href={`${baseUrl}/ar`} />
+        <link rel="alternate" hrefLang="en" href={`${baseUrl}/en`} />
+        <link rel="alternate" hrefLang="x-default" href={`${baseUrl}/ar`} />
+      </Helmet>
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-amber-500 text-black shadow-2xl text-xs font-extrabold flex items-center gap-2 border border-amber-300 animate-fade-in">

@@ -84,7 +84,7 @@ export const PostDetail: React.FC<PostDetailProps> = ({
 
     const imageUrl = post.thumbnail && post.thumbnail.startsWith('http')
       ? post.thumbnail
-      : 'https://kareem-ashmawy.netlify.app/og-image.jpg';
+      : 'https://karim-ashmawy.netlify.app/og-image.jpg';
 
     setMetaTag('meta[property="og:title"]', post.title);
     setMetaTag('meta[property="og:description"]', post.snippet);
@@ -97,12 +97,12 @@ export const PostDetail: React.FC<PostDetailProps> = ({
     return () => {
       document.title = originalTitle;
       setMetaTag('meta[property="og:title"]', 'مدونة المفكر والباحث كريم عشماوي | Karim Ashmawy Blog');
-      setMetaTag('meta[property="og:description"]', 'اقرأ أحدث المقالات والدراسات للمفكر والباحث كريم عشماوي باللغتين العربية والإنجليزية.');
-      setMetaTag('meta[property="og:image"]', 'https://kareem-ashmawy.netlify.app/og-image.jpg');
-      setMetaTag('meta[property="og:image:secure_url"]', 'https://kareem-ashmawy.netlify.app/og-image.jpg');
+      setMetaTag('meta[property="og:description"]', 'الموقع والمدونة الرسمية للمفكر والباحث كريم عشماوي، مؤلف كتب: مثل نوره، محمديم، أسرار المحراب، وقصة تروم المسيحية. كافة المقالات والأبحاث الفكرية باللغة العربية.');
+      setMetaTag('meta[property="og:image"]', 'https://karim-ashmawy.netlify.app/og-image.jpg');
+      setMetaTag('meta[property="og:image:secure_url"]', 'https://karim-ashmawy.netlify.app/og-image.jpg');
       setMetaTag('meta[name="twitter:title"]', 'مدونة المفكر والباحث كريم عشماوي');
-      setMetaTag('meta[name="twitter:description"]', 'مقالات وأبحاث المفكر والباحث كريم عشماوي باللغتين العربية والإنجليزية.');
-      setMetaTag('meta[name="twitter:image"]', 'https://kareem-ashmawy.netlify.app/og-image.jpg');
+      setMetaTag('meta[name="twitter:description"]', 'مقالات وأبحاث المفكر والباحث كريم عشماوي - مؤلف كتب: مثل نوره، محمديم، أسرار المحراب، وقصة تروم المسيحية.');
+      setMetaTag('meta[name="twitter:image"]', 'https://karim-ashmawy.netlify.app/og-image.jpg');
     };
   }, [post]);
 
@@ -355,7 +355,7 @@ export const PostDetail: React.FC<PostDetailProps> = ({
 
           <div className="flex items-center gap-3 text-xs">
             <a
-              href="https://kareem-ashmawy.netlify.app"
+              href="https://karim-ashmawy.netlify.app"
               target="_blank"
               rel="noopener noreferrer"
               className="text-amber-300 hover:underline flex items-center gap-1"

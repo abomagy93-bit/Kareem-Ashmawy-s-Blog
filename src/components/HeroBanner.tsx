@@ -132,7 +132,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           {/* User Requested Quick Nav Links */}
           <div className="flex flex-wrap items-center gap-3 pt-2 max-w-full">
             <a
-              href="https://kareem-ashmawy.netlify.app"
+              href="https://karim-ashmawy.netlify.app"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-black text-xs font-bold hover:brightness-110 transition-all shadow-md shadow-amber-500/10"
@@ -189,46 +189,16 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
         </div>
       </div>
 
-      {/* Language Division Tabs */}
+      {/* Publications and Language Bar */}
       <div className="mt-8 pt-6 border-t border-amber-500/20 flex flex-wrap items-center justify-between gap-4 max-w-full">
-        <div className="flex flex-wrap items-center gap-2 max-w-full">
-          <span className="text-xs text-amber-400/80 font-bold shrink-0">التصنيف حسب اللغة:</span>
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950 border border-amber-500/20 max-w-full overflow-x-auto">
-            <button
-              onClick={() => setLanguageFilter('all')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                languageFilter === 'all'
-                  ? 'bg-amber-500 text-black shadow-md'
-                  : 'text-slate-400 hover:text-amber-300'
-              }`}
-            >
-              جميع المقالات ({totalPosts})
-            </button>
-            <button
-              onClick={() => setLanguageFilter('ar')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                languageFilter === 'ar'
-                  ? 'bg-amber-500 text-black shadow-md'
-                  : 'text-slate-400 hover:text-amber-300'
-              }`}
-            >
-              مقالات عربية ({arCount})
-            </button>
-            <button
-              onClick={() => setLanguageFilter('en')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                languageFilter === 'en'
-                  ? 'bg-amber-500 text-black shadow-md'
-                  : 'text-slate-400 hover:text-amber-300'
-              }`}
-            >
-              English Articles ({enCount})
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold text-xs">
+            ✨ مدونة وأبحاث باللغة العربية
+          </span>
         </div>
 
         <div className="text-xs text-slate-400 font-medium">
-          إجمالي المقالات المحملة: <span className="text-amber-400 font-bold">{totalPosts}</span>
+          إجمالي المقالات والأبحاث المتاحة: <span className="text-amber-400 font-bold">{totalPosts}</span> مقالاً
         </div>
       </div>
     </div>

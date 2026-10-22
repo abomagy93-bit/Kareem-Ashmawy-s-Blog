@@ -142,7 +142,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-4 text-[11px] font-medium overflow-x-auto">
             {/* Karim Ashmawy Personal Site */}
             <a
-              href="https://kareem-ashmawy.netlify.app"
+              href="https://karim-ashmawy.netlify.app"
               target="_blank"
               rel="noopener noreferrer"
               className="text-amber-300/90 hover:text-amber-200 flex items-center gap-1 transition-colors hover:underline"

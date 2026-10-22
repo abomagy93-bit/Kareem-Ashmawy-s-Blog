@@ -24,7 +24,7 @@ export const Footer: React.FC = () => {
           {/* Quick External Links requested by user */}
           <div className="flex flex-wrap items-center justify-center gap-6">
             <a
-              href="https://kareem-ashmawy.netlify.app"
+              href="https://karim-ashmawy.netlify.app"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-amber-300 flex items-center gap-1.5 transition-colors font-medium text-amber-400/90"

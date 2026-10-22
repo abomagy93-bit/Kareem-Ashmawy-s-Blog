@@ -381,8 +381,8 @@ app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
   res.send(`User-agent: *
 Allow: /
+Sitemap: https://karim-ashmawy.netlify.app/sitemap.xml
 Sitemap: https://karimashmawy.blogspot.com/sitemap.xml
-Sitemap: https://kareem-ashmawy.netlify.app/sitemap.xml
 `);
 });
 
@@ -393,22 +393,20 @@ app.get('/sitemap.xml', (req, res) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://karimashmawy.blogspot.com/</loc>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://karimashmawy.blogspot.com/?lang=ar"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://karimashmawy.blogspot.com/?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://karimashmawy.blogspot.com/"/>
+    <loc>https://karim-ashmawy.netlify.app/</loc>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://karim-ashmawy.netlify.app/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://karim-ashmawy.netlify.app/"/>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://kareem-ashmawy.netlify.app/</loc>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://kareem-ashmawy.netlify.app/?lang=ar"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://kareem-ashmawy.netlify.app/?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://kareem-ashmawy.netlify.app/"/>
+    <loc>https://karimashmawy.blogspot.com/</loc>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://karimashmawy.blogspot.com/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://karimashmawy.blogspot.com/"/>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <priority>0.8</priority>
   </url>
 </urlset>`);
 });
