@@ -382,7 +382,6 @@ app.get('/robots.txt', (req, res) => {
   res.send(`User-agent: *
 Allow: /
 Sitemap: https://karim-ashmawy.netlify.app/sitemap.xml
-Sitemap: https://karimashmawy.blogspot.com/sitemap.xml
 `);
 });
 
@@ -399,14 +398,6 @@ app.get('/sitemap.xml', (req, res) => {
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://karimashmawy.blogspot.com/</loc>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://karimashmawy.blogspot.com/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://karimashmawy.blogspot.com/"/>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
   </url>
 </urlset>`);
 });

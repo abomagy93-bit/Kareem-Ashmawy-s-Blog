@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
 Sitemap: https://karim-ashmawy.netlify.app/sitemap.xml
-Sitemap: https://karimashmawy.blogspot.com/sitemap.xml
